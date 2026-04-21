@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>HealthAI – XAI-based Early Diabetes Risk Detection</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=DM+Serif+Display:ital@0;1&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0ea5e9",
+                        "primary-dark": "#0284c7",
+                        "accent": "#06b6d4",
+                        "bg-light": "#f0f7ff",
+                        "bg-dark": "#0b1623",
+                        "surface": "#ffffff",
+                        "surface-dark": "#111e2d",
+                    },
+                    fontFamily: {
+                        "display": ['"DM Serif Display"', 'serif'],
+                        "body": ['"DM Sans"', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Base */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #f0f7ff;
+            min-height: 100dvh;
+            scroll-behavior: smooth;
+            color: #0f172a;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Hero gradient mesh background */
+        .hero-mesh {
+            background-color: #f0f7ff;
+            background-image:
+                radial-gradient(ellipse 80% 60% at 20% 30%, rgba(14, 165, 233, 0.13) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 50% at 80% 70%, rgba(6, 182, 212, 0.10) 0%, transparent 65%),
+                radial-gradient(ellipse 40% 40% at 50% 10%, rgba(14, 165, 233, 0.08) 0%, transparent 60%);
+        }
+
+        /* Animated pulse dot for hero badge */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.6);
+                opacity: 0;
+            }
+        }
+
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            background: rgba(14, 165, 233, 0.4);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        /* Stat card hover lift */
+        .stat-card {
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(14, 165, 233, 0.15);
+        }
+
+        /* Risk factor card */
+        .risk-card {
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .risk-card:hover {
+            transform: translateY(-3px);
+            border-color: #0ea5e9;
+        }
+
+        /* Awareness section subtle wave */
+        .awareness-bg {
+            background: linear-gradient(160deg, #e0f2fe 0%, #f0f7ff 40%, #ecfeff 100%);
+        }
+
+        /* Input focus ring */
+        input[type="number"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+            border-color: #0ea5e9;
+        }
+
+        /* Smooth section fade-in on load */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-up {
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .fade-up-d1 {
+            animation-delay: 0.1s;
+        }
+
+        .fade-up-d2 {
+            animation-delay: 0.22s;
+        }
+
+        .fade-up-d3 {
+            animation-delay: 0.34s;
+        }
+
+        .fade-up-d4 {
+            animation-delay: 0.46s;
+        }
+
+        /* Divider line with label */
+        .section-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .section-eyebrow::before,
+        .section-eyebrow::after {
+            content: '';
+            display: block;
+            height: 1.5px;
+            width: 28px;
+            background: #0ea5e9;
+            opacity: 0.5;
+            border-radius: 2px;
+        }
+
+        /* Confidence legend chip */
+        .legend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body class="font-body text-slate-900">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+
+        <!-- ═══════════════════════════════════ HEADER ═══════════════════════════════════ -->
+        <header class="sticky top-0 z-50 w-full bg-white/85 backdrop-blur-md border-b border-slate-200/70 shadow-sm">
+            <div class="max-w-6xl mx-auto flex items-center justify-between px-5 py-3.5">
+                <!-- Logo -->
+                <a href="#home" class="flex items-center gap-2.5 no-underline group">
+                    <div
+                        class="relative w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/30 group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-white text-xl">ecg_heart</span>
+                    </div>
+                    <span class="text-lg font-bold tracking-tight text-slate-900">Health<span
+                            class="text-primary">AI</span></span>
+                </a>
+                <!-- Nav -->
+                <nav class="hidden md:flex items-center gap-7">
+                    <a href="#home" class="text-sm font-semibold text-primary no-underline">Home</a>
+                    <a href="#about"
+                        class="text-sm font-medium text-slate-500 hover:text-primary transition-colors no-underline">About</a>
+                    <a href="#awareness"
+                        class="text-sm font-medium text-slate-500 hover:text-primary transition-colors no-underline">Awareness</a>
+                    <a href="#prediction"
+                        class="text-sm font-medium text-slate-500 hover:text-primary transition-colors no-underline">Prediction</a>
+                    <a href="#prediction"
+                        class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-full text-sm font-bold shadow-md shadow-primary/20 hover:scale-105 transition-all no-underline">
+                        Get Started
+                    </a>
+                </nav>
+                <button id="mobile-menu-btn" class="md:hidden text-slate-500 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+            <!-- Mobile nav drawer -->
+            <div id="mobile-menu"
+                class="hidden md:hidden border-t border-slate-200 bg-white/95 backdrop-blur px-5 py-4 flex flex-col gap-3">
+                <a href="#home" class="text-sm font-semibold text-primary no-underline">Home</a>
+                <a href="#about"
+                    class="text-sm font-medium text-slate-500 hover:text-primary transition-colors no-underline">About</a>
+                <a href="#awareness"
+                    class="text-sm font-medium text-slate-500 hover:text-primary transition-colors no-underline">Awareness</a>
+                <a href="#prediction"
+                    class="text-sm font-medium text-slate-500 hover:text-primary transition-colors no-underline">Prediction</a>
+                <a href="#prediction"
+                    class="bg-primary text-white px-5 py-2 rounded-full text-sm font-bold text-center no-underline">
+                    Get Started
+                </a>
+            </div>
+        </header>
+
+        <main class="w-full flex-1">
+
+            <!-- ═══════════════════════════════ PHASE 1: HERO + ABOUT (MERGED) ═══════════════════════════════ -->
+            <section class="hero-mesh scroll-mt-20 pt-12 pb-16 px-5" id="home">
+                <div class="max-w-6xl mx-auto">
+
+                    <!-- Top eyebrow -->
+                    <div class="flex justify-center mb-8 fade-up">
+                        <span class="section-eyebrow">Health Analysis Portal</span>
+                    </div>
+
+                    <!-- Main hero split -->
+                    <div class="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+                        <!-- LEFT: Text content -->
+                        <div class="lg:w-[55%] flex flex-col gap-6 fade-up fade-up-d1">
+                            <!-- Badge -->
+                            <div
+                                class="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary rounded-full px-4 py-1.5 w-fit text-xs font-semibold uppercase tracking-widest">
+                                <span class="relative inline-block w-2 h-2 pulse-ring">
+                                    <span class="block w-2 h-2 rounded-full bg-primary"></span>
+                                </span>
+                                XAI-based Early Diabetes Risk Detection
+                            </div>
+
+                            <!-- Headline -->
+                            <h1 class="font-display text-4xl lg:text-5xl leading-[1.12] text-slate-900">
+                                Proactive Health<br>
+                                <em class="not-italic text-primary">Risk Assessment</em>
+                            </h1>
+
+                            <!-- Hero body from hero_content.txt -->
+                            <p class="text-slate-600 text-base leading-relaxed max-w-xl">
+                                Diabetes often remains undetected during its early stages, leading to preventable
+                                long-term
+                                complications. Early identification of individuals at risk plays a crucial role in
+                                enabling timely
+                                lifestyle modifications and clinical intervention.
+                            </p>
+                            <p class="text-slate-600 text-base leading-relaxed max-w-xl">
+                                Using routinely collected clinical parameters such as glucose levels, BMI, and age, this
+                                system
+                                transforms standard medical test data into early warning signals through
+                                machine-learning&ndash;based analysis combined with Explainable AI (XAI).
+                            </p>
+
+                            <!-- Feature bullets -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                                <div
+                                    class="stat-card bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+                                    <span class="material-symbols-outlined text-primary">analytics</span>
+                                    <p class="text-sm font-semibold text-slate-800">Validated Predictive Model</p>
+                                    <p class="text-[11px] text-slate-500 leading-snug">XGBoost + SMOTETomek augmentation
+                                    </p>
+                                </div>
+                                <div
+                                    class="stat-card bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+                                    <span class="material-symbols-outlined text-primary">manage_search</span>
+                                    <p class="text-sm font-semibold text-slate-800">Transparent Reasoning</p>
+                                    <p class="text-[11px] text-slate-500 leading-snug">SHAP-based XAI explanations</p>
+                                </div>
+                                <div
+                                    class="stat-card bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+                                    <span class="material-symbols-outlined text-primary">medical_services</span>
+                                    <p class="text-sm font-semibold text-slate-800">Clinical Decision Support</p>
+                                    <p class="text-[11px] text-slate-500 leading-snug">Assists, never replaces,
+                                        physicians</p>
+                                </div>
+                            </div>
+
+                            <a href="#prediction"
+                                class="mt-2 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl px-8 py-4 shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-95 transition-all w-fit no-underline text-sm">
+                                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                                Start Your Assessment
+                            </a>
+                        </div>
+
+                        <!-- RIGHT: Hero image + About card -->
+                        <div class="lg:w-[45%] flex flex-col gap-5 fade-up fade-up-d2">
+                            <!-- Hero image -->
+                            <div
+                                class="rounded-2xl overflow-hidden border border-slate-200 shadow-xl aspect-[4/3] bg-gradient-to-br from-sky-100 to-cyan-50 flex items-center justify-center">
+                                <img src="{{ url_for('static', filename='assets/images/hero_diabetes.png') }}"
+                                    alt="Diabetes health assessment illustration" class="w-full h-full object-cover"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                <!-- Fallback when image not found -->
+                                <div
+                                    class="hidden w-full h-full flex-col items-center justify-center gap-4 text-slate-400">
+                                    <span class="material-symbols-outlined text-6xl text-primary/40">ecg_heart</span>
+                                    <p class="text-sm font-medium">assets/images/hero_diabetes.png</p>
+                                </div>
+                            </div>
+
+                            <!-- About card — merged "Transparent Medical Insights" section -->
+                            <div class="bg-white border border-blue-100 rounded-2xl p-6 shadow-sm flex gap-4"
+                                id="about">
+                                <div
+                                    class="shrink-0 w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-primary">psychology</span>
+                                </div>
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-800 mb-1">Transparent Medical Insights
+                                    </h2>
+                                    <p class="text-sm text-slate-500 leading-relaxed">
+                                        This platform functions as a clinical decision-support system, assisting
+                                        individuals and
+                                        healthcare professionals with transparent, explainable risk
+                                        assessments&mdash;while not
+                                        replacing professional medical diagnosis.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════ PHASE 2: DIABETES AWARENESS SECTION ═══════════════════════════════ -->
+            <section class="awareness-bg scroll-mt-20 py-16 px-5 border-y border-sky-100" id="awareness">
+                <div class="max-w-6xl mx-auto">
+
+                    <!-- Section header -->
+                    <div class="text-center mb-12 fade-up">
+                        <span class="section-eyebrow mb-3">Educational Context</span>
+                        <h2 class="font-display text-3xl lg:text-4xl text-slate-900 mt-3">Understanding Diabetes</h2>
+                        <p class="text-slate-500 text-base mt-3 max-w-xl mx-auto leading-relaxed">
+                            Strengthening the case for proactive, technology-assisted screening.
+                        </p>
+                    </div>
+
+                    <!-- 2-col layout: What is it + Why detect early -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-7 shadow-sm fade-up fade-up-d1">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-red-500">favorite</span>
+                                </div>
+                                <h3 class="text-base font-bold text-slate-800">What Is Diabetes?</h3>
+                            </div>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                Diabetes is a chronic metabolic condition characterised by elevated blood glucose levels
+                                due to
+                                insufficient insulin production or ineffective insulin utilisation. Over time, unmanaged
+                                diabetes
+                                can lead to serious complications affecting the <strong>heart, kidneys, nerves, and
+                                    vision</strong>.
+                            </p>
+                        </div>
+                        <div class="bg-white rounded-2xl border border-slate-200 p-7 shadow-sm fade-up fade-up-d2">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-amber-500">warning</span>
+                                </div>
+                                <h3 class="text-base font-bold text-slate-800">Why Early Detection Is Difficult</h3>
+                            </div>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                In many individuals, diabetes develops gradually and may remain undiagnosed for years.
+                                During this
+                                <em>silent progression</em>, internal damage can occur without noticeable symptoms.
+                                Early identification
+                                allows timely lifestyle modifications and medical consultation, significantly reducing
+                                the likelihood
+                                of long-term complications.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Risk factors grid -->
+                    <div class="mb-10">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-widest mb-5 text-center fade-up">
+                            Common Risk Factors
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <!-- Glucose -->
+                            <div
+                                class="risk-card bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm fade-up fade-up-d1">
+                                <div
+                                    class="w-10 h-10 mx-auto mb-3 rounded-full bg-sky-50 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-primary text-xl">water_drop</span>
+                                </div>
+                                <p class="text-xs font-bold text-slate-800">Elevated Glucose</p>
+                                <p class="text-[10px] text-slate-400 mt-1 leading-snug">Fasting &ge; 126 mg/dL indicates
+                                    diabetes</p>
+                            </div>
+                            <!-- BMI -->
+                            <div
+                                class="risk-card bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm fade-up fade-up-d2">
+                                <div
+                                    class="w-10 h-10 mx-auto mb-3 rounded-full bg-emerald-50 flex items-center justify-center">
+                                    <span
+                                        class="material-symbols-outlined text-emerald-500 text-xl">monitor_weight</span>
+                                </div>
+                                <p class="text-xs font-bold text-slate-800">High BMI</p>
+                                <p class="text-[10px] text-slate-400 mt-1 leading-snug">Obesity significantly increases
+                                    insulin resistance</p>
+                            </div>
+                            <!-- Age -->
+                            <div
+                                class="risk-card bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm fade-up fade-up-d3">
+                                <div
+                                    class="w-10 h-10 mx-auto mb-3 rounded-full bg-violet-50 flex items-center justify-center">
+                                    <span
+                                        class="material-symbols-outlined text-violet-500 text-xl">calendar_today</span>
+                                </div>
+                                <p class="text-xs font-bold text-slate-800">Advancing Age</p>
+                                <p class="text-[10px] text-slate-400 mt-1 leading-snug">Risk rises notably after age 45
+                                </p>
+                            </div>
+                            <!-- Family History -->
+                            <div
+                                class="risk-card bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm fade-up fade-up-d1">
+                                <div
+                                    class="w-10 h-10 mx-auto mb-3 rounded-full bg-orange-50 flex items-center justify-center">
+                                    <span
+                                        class="material-symbols-outlined text-orange-500 text-xl">family_history</span>
+                                </div>
+                                <p class="text-xs font-bold text-slate-800">Family History</p>
+                                <p class="text-[10px] text-slate-400 mt-1 leading-snug">Genetic predisposition via
+                                    pedigree score</p>
+                            </div>
+                            <!-- Lifestyle -->
+                            <div
+                                class="risk-card bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm fade-up fade-up-d2">
+                                <div
+                                    class="w-10 h-10 mx-auto mb-3 rounded-full bg-rose-50 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-rose-500 text-xl">directions_run</span>
+                                </div>
+                                <p class="text-xs font-bold text-slate-800">Lifestyle Factors</p>
+                                <p class="text-[10px] text-slate-400 mt-1 leading-snug">Sedentary habits and poor diet
+                                    patterns</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Technology role + impact cards -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div
+                            class="bg-gradient-to-br from-primary/10 to-cyan-50 border border-primary/20 rounded-2xl p-7 fade-up fade-up-d3">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="material-symbols-outlined text-primary">hub</span>
+                                <h3 class="text-sm font-bold text-slate-800">Role of Technology</h3>
+                            </div>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                Advances in machine learning enable analysis of routine clinical parameters to identify
+                                hidden risk
+                                patterns. Combined with Explainable AI, these systems not only estimate risk levels but
+                                also provide
+                                transparent insights into the factors influencing outcomes&mdash;promoting informed and
+                                responsible
+                                health decisions.
+                            </p>
+                        </div>
+                        <div
+                            class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-7 fade-up fade-up-d4">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="material-symbols-outlined text-emerald-600">health_and_safety</span>
+                                <h3 class="text-sm font-bold text-slate-800">Encouraging Preventive Action</h3>
+                            </div>
+                            <p class="text-sm text-slate-600 leading-relaxed">
+                                Diabetes risk can often be managed or delayed through early interventions such as
+                                balanced nutrition,
+                                regular physical activity, routine health check-ups, and professional medical guidance.
+                                Awareness and
+                                timely action play a crucial role in improving long-term health outcomes.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════ PHASE 3: PREDICTION FORM (UNCHANGED LOGIC) ═══════════════════════════════ -->
+            <section class="py-16 px-5 scroll-mt-20" id="prediction">
+                <div class="max-w-4xl mx-auto">
+
+                    <!-- Section header -->
+                    <div class="text-center mb-10 fade-up">
+                        <span class="section-eyebrow mb-3">Step 1 of 2</span>
+                        <h2 class="font-display text-3xl lg:text-4xl text-slate-900 mt-3">Diabetes Risk Prediction</h2>
+                        <p class="text-slate-500 text-sm mt-2 max-w-md mx-auto">
+                            Enter your clinical measurements. Required fields are marked. Optional fields improve
+                            accuracy.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden fade-up fade-up-d1">
+                        <!-- Form header bar -->
+                        <div class="border-b border-slate-100 px-7 py-5 flex items-center gap-4 bg-slate-50/60">
+                            <div class="bg-primary/10 p-3 rounded-xl">
+                                <span class="material-symbols-outlined text-primary text-xl">edit_note</span>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">Health Data Entry</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Provide your physiological measurements below
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-7 lg:p-10">
+                            <form action="/predict" method="POST">
+
+
+                                <!-- Required fields -->
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Required
+                                        Information</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <!-- Glucose -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-sm font-bold text-slate-700">Glucose Level
+                                                <span class="text-primary ml-0.5">*</span></label>
+                                            <div class="relative">
+                                                <span
+                                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">water_drop</span>
+                                                <input type="number" name="glucose" min="0" max="500"
+                                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all"
+                                                    placeholder="e.g. 120" required />
+                                            </div>
+                                            <p class="text-[10px] text-slate-400">mg/dL &bull; Normal range: 70–140</p>
+                                        </div>
+                                        <!-- BMI -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-sm font-bold text-slate-700">Body Mass Index
+                                                <span class="text-primary ml-0.5">*</span></label>
+                                            <div class="relative">
+                                                <span
+                                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">monitor_weight</span>
+                                                <input type="number" step="0.1" name="bmi" min="10" max="80"
+                                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all"
+                                                    placeholder="e.g. 24.5" required />
+                                            </div>
+                                            <p class="text-[10px] text-slate-400">kg/m&sup2; &bull; Healthy: 18.5–24.9
+                                            </p>
+                                        </div>
+                                        <!-- Age -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-sm font-bold text-slate-700">Age
+                                                <span class="text-primary ml-0.5">*</span></label>
+                                            <div class="relative">
+                                                <span
+                                                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">calendar_today</span>
+                                                <input type="number" name="age" min="1" max="120"
+                                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm transition-all"
+                                                    placeholder="e.g. 45" required />
+                                            </div>
+                                            <p class="text-[10px] text-slate-400">Years &bull; Valid: 18–120</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Optional expandable fields -->
+                                <details class="group rounded-xl border border-dashed border-slate-300 bg-slate-50/50">
+                                    <summary
+                                        class="flex items-center justify-between p-4 cursor-pointer list-none select-none">
+                                        <span class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                            <span
+                                                class="material-symbols-outlined text-primary text-base">add_circle</span>
+                                            Additional Health Parameters
+                                            <span
+                                                class="text-[10px] font-medium text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full ml-1">Optional</span>
+                                        </span>
+                                        <span
+                                            class="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+                                    </summary>
+                                    <div class="px-6 pb-6 pt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                        <!-- Blood Pressure -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-xs font-bold text-slate-500 uppercase">Blood Pressure
+                                                (mmHg)</label>
+                                            <input type="number" name="bloodpressure" min="0" max="200"
+                                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm transition-all"
+                                                placeholder="e.g. 80" />
+                                            <p class="text-[10px] text-slate-400">Normal: 60–80 mmHg</p>
+                                        </div>
+                                        <!-- Insulin -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-xs font-bold text-slate-500 uppercase">Insulin Level (mu
+                                                U/mL)</label>
+                                            <input type="number" name="insulin" min="0" max="900"
+                                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm transition-all"
+                                                placeholder="e.g. 30" />
+                                        </div>
+                                        <!-- Skin Thickness -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-xs font-bold text-slate-500 uppercase">Skin Thickness
+                                                (mm)</label>
+                                            <input type="number" name="skinthickness" min="0" max="100"
+                                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm transition-all"
+                                                placeholder="e.g. 20" />
+                                        </div>
+                                        <!-- Pregnancies -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label
+                                                class="text-xs font-bold text-slate-500 uppercase">Pregnancies</label>
+                                            <input type="number" name="pregnancies" min="0" max="20"
+                                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm transition-all"
+                                                placeholder="e.g. 2" />
+                                        </div>
+                                        <!-- Pedigree -->
+                                        <div class="flex flex-col gap-1.5">
+                                            <label class="text-xs font-bold text-slate-500 uppercase">Diabetes Pedigree
+                                                Function</label>
+                                            <input type="number" step="0.001" name="pedigree" min="0.000" max="2.500"
+                                                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm transition-all"
+                                                placeholder="e.g. 0.471" />
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <!-- Disclaimer (from new_ui.txt suggestion) -->
+                                <div
+                                    class="flex items-start gap-2.5 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                                    <span
+                                        class="material-symbols-outlined text-amber-500 text-base mt-0.5 shrink-0">info</span>
+                                    <p class="text-xs text-amber-800 leading-relaxed">
+                                        <strong>Clinical Disclaimer:</strong> This tool supports decision-making and
+                                        does
+                                        not replace medical diagnosis. Always consult a qualified healthcare
+                                        professional for
+                                        clinical evaluation and treatment.
+                                    </p>
+                                </div>
+
+                                <!-- Submit -->
+                                <div class="flex flex-col items-center gap-3 pt-2">
+                                    <button type="submit"
+                                        class="w-full md:w-96 py-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2.5 active:scale-95 text-sm">
+                                        <span class="material-symbols-outlined text-lg">analytics</span>
+                                        Predict My Diabetes Risk
+                                    </button>
+                                    <p class="text-[11px] text-slate-400 text-center max-w-sm">
+                                        You will be redirected to a personalised risk results page with SHAP-based
+                                        explanations.
+                                    </p>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Confidence legend (from new_ui.txt suggestion) -->
+                    <div class="mt-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm fade-up">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-slate-400 text-base">help_outline</span>
+                            <p class="text-xs font-bold text-slate-600 uppercase tracking-widest">Model Confidence Guide
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <span class="legend-chip bg-emerald-50 border border-emerald-200 text-emerald-700">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                                High Confidence — strong feature agreement across all inputs
+                            </span>
+                            <span class="legend-chip bg-amber-50 border border-amber-200 text-amber-700">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                                Medium Confidence — partial feature agreement; borderline profile
+                            </span>
+                            <span class="legend-chip bg-slate-50 border border-slate-200 text-slate-600">
+                                <span class="w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
+                                Low Confidence — insufficient or conflicting input signals
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+        <footer class="bg-white border-t border-slate-200 py-10 mt-4">
+            <div class="max-w-6xl mx-auto px-5 flex flex-col md:flex-row justify-between items-center gap-5">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-white text-base">ecg_heart</span>
+                    </div>
+                    <span class="text-base font-bold tracking-tight">Health<span class="text-primary">AI</span></span>
+                </div>
+                <div class="flex gap-7">
+                    <a class="text-xs text-slate-400 hover:text-primary transition-colors no-underline" href="#">Privacy
+                        Policy</a>
+                    <a class="text-xs text-slate-400 hover:text-primary transition-colors no-underline" href="#">Terms
+                        of Use</a>
+                    <a class="text-xs text-slate-400 hover:text-primary transition-colors no-underline"
+                        href="#">Clinical Sources</a>
+                </div>
+                <p class="text-xs text-slate-400">&copy; 2026 HealthAI Systems. All rights reserved.</p>
+            </div>
+        </footer>
+
+    </div>
+    <script>
+        // Mobile menu toggle
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        // Close menu when a nav link is clicked
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+    </script>
+</body>
+
+</html>

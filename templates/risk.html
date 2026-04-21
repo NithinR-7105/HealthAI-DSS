@@ -1,0 +1,1052 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthAI – Your Risk Assessment Results</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1d8fdb',
+                        'primary-light': '#e8f4fd',
+                        'primary-dark': '#1570b5',
+                        'risk-low': '#16a34a',
+                        'risk-mod': '#d97706',
+                        'risk-high': '#dc2626',
+                    },
+                    fontFamily: {
+                        display: ['Lora', 'Georgia', 'serif'],
+                        body: ['"DM Sans"', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #f4f8fc;
+            color: #1e293b;
+            min-height: 100dvh;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .anim {
+            animation: fadeUp 0.52s ease both;
+        }
+
+        .anim-d1 {
+            animation-delay: 0.08s;
+        }
+
+        .anim-d2 {
+            animation-delay: 0.16s;
+        }
+
+        .anim-d3 {
+            animation-delay: 0.24s;
+        }
+
+        .anim-d4 {
+            animation-delay: 0.32s;
+        }
+
+        .anim-d5 {
+            animation-delay: 0.40s;
+        }
+
+        .anim-d6 {
+            animation-delay: 0.48s;
+        }
+
+        .gauge-track {
+            position: relative;
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(to right, #16a34a 0%, #d97706 50%, #dc2626 100%);
+        }
+
+        .gauge-marker {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #1d8fdb;
+            box-shadow: 0 2px 8px rgba(29, 143, 219, 0.4);
+            transition: left 0.8s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .gauge-label {
+            position: absolute;
+            top: 20px;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1.25rem;
+            border: 1px solid #e2ebf5;
+            box-shadow: 0 2px 12px rgba(29, 100, 180, 0.06);
+        }
+
+        .factor-bar-fill {
+            transition: width 1s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .chat-bot {
+            background: #e8f4fd;
+            border: 1px solid #bee3fb;
+            border-radius: 0 1rem 1rem 1rem;
+        }
+
+        .chat-user {
+            background: #1d8fdb;
+            color: white;
+            border-radius: 1rem 0 1rem 1rem;
+        }
+
+        #chat-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(29, 143, 219, 0.18);
+            border-color: #1d8fdb;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .chip-btn {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(29, 143, 219, 0.30);
+            color: #1d8fdb;
+            background: rgba(29, 143, 219, 0.05);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .chip-btn:hover {
+            background: rgba(29, 143, 219, 0.12);
+        }
+
+        #chat-fab {
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            z-index: 500;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1d8fdb, #1570b5);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 24px rgba(29, 143, 219, 0.45);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #chat-fab:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 32px rgba(29, 143, 219, 0.55);
+        }
+
+        #chat-fab .fab-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            border: 2px solid white;
+        }
+
+        #chat-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding: 100px 24px 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        #chat-modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #chat-modal {
+            width: 100%;
+            max-width: 420px;
+            max-height: 78vh;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: translateY(32px) scale(0.97);
+            transition: transform 0.28s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        #chat-modal-overlay.open #chat-modal {
+            transform: translateY(0) scale(1);
+        }
+
+        #chat-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .check-row:last-child {
+            border-bottom: none;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+            }
+
+            .card {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-body">
+
+    <!-- ═══ JINJA2 DATA STORE — hidden elements, formatter-safe ═══ -->
+    <div id="jinja-prob"        style="display:none;">{{ data.probability }}</div>
+    <div id="jinja-tier"        style="display:none;">{{ data.tier_key }}</div>
+    <div id="jinja-tier-label"  style="display:none;">{{ data.tier_label }}</div>
+    <div id="jinja-glucose"     style="display:none;">{{ data.input.Glucose }}</div>
+    <div id="jinja-bmi"         style="display:none;">{{ data.input.BMI }}</div>
+    <div id="jinja-bp"          style="display:none;">{{ data.input.BloodPressure }}</div>
+    <div id="jinja-age"         style="display:none;">{{ data.input.Age }}</div>
+    <div id="jinja-insulin"     style="display:none;">{{ data.input.Insulin }}</div>
+    <div id="jinja-pedigree"    style="display:none;">{{ data.input.DiabetesPedigreeFunction }}</div>
+    <div id="jinja-top-feature" style="display:none;">{{ (data.top_features[0].feature if data.top_features else 'Glucose') }}</div>
+    <div id="jinja-top-status"  style="display:none;">{{ (data.top_features[0].status if data.top_features else 'Unknown') }}</div>
+    <!-- ════════════════════════════════════════════════════════════ -->
+
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <header class="no-print sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between px-5 py-3.5">
+            <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 no-underline group">
+                <div
+                    class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/30 group-hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined text-white text-xl">ecg_heart</span>
+                </div>
+                <span class="text-base font-bold tracking-tight text-slate-800">Health<span
+                        class="text-primary">AI</span></span>
+            </a>
+            <span class="font-display text-sm font-semibold text-slate-600 hidden sm:block">Risk Assessment
+                Results</span>
+            <button onclick="window.print()"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 text-sm font-semibold text-slate-600 hover:border-primary hover:text-primary transition-colors bg-white">
+                <span class="material-symbols-outlined text-base">download</span>
+                <span class="hidden sm:inline">Download Report</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ═══════════════ MAIN ═══════════════ -->
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6 pb-28">
+
+        <!-- ── SECTION 1: Two-column top ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+            <!-- LEFT 3/5: Risk Summary Card -->
+            <div class="lg:col-span-3 card anim anim-d1 overflow-hidden">
+                <!-- Dynamic risk colour band -->
+                <div class="h-2 w-full
+                    {% if data.tier_key == 'high' %}bg-gradient-to-r from-red-400 to-red-600
+                    {% elif data.tier_key == 'moderate' %}bg-gradient-to-r from-amber-400 to-orange-400
+                    {% else %}bg-gradient-to-r from-emerald-400 to-green-500{% endif %}">
+                </div>
+
+                <div class="p-7">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">AI Analysis Result
+                    </p>
+
+                    <!-- Title + dynamic badge -->
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+                        <div>
+                            <h1 class="font-display text-2xl lg:text-3xl text-slate-800 leading-snug">Your Diabetes Risk
+                                Assessment</h1>
+                            <p class="text-sm text-slate-400 mt-1">Based on the health information you provided</p>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shrink-0
+                            {% if data.tier_key == 'high' %}bg-red-50 text-red-700 border border-red-200
+                            {% elif data.tier_key == 'moderate' %}bg-amber-50 text-amber-700 border border-amber-200
+                            {% else %}bg-emerald-50 text-emerald-700 border border-emerald-200{% endif %}">
+                            <span class="w-2 h-2 rounded-full inline-block animate-pulse
+                                {% if data.tier_key == 'high' %}bg-red-500
+                                {% elif data.tier_key == 'moderate' %}bg-amber-500
+                                {% else %}bg-emerald-500{% endif %}">
+                            </span>
+                            {{ data.tier_label }}
+                        </span>
+                    </div>
+
+                    <!-- Probability display -->
+                    <div class="flex items-end gap-5 mb-6">
+                        <div>
+                            <p class="text-6xl font-bold text-slate-800 leading-none">{{ data.probability }}%</p>
+                            <p class="text-xs text-slate-400 mt-1.5">Risk Probability</p>
+                        </div>
+                        <div class="flex-1 pb-1.5">
+                            <div
+                                class="flex justify-between text-[10px] text-slate-400 mb-1.5 font-semibold uppercase tracking-wider">
+                                <span>Model Confidence</span>
+                                <span class="text-primary font-bold">{{ data.confidence }}</span>
+                            </div>
+                            <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div class="h-full rounded-full bg-primary factor-bar-fill"
+                                    style="width:{{ data.probability }}%"></div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">XGBoost + SHAP validated prediction</p>
+                        </div>
+                    </div>
+
+                    <!-- Contextual alert message -->
+                    <div class="rounded-xl p-4 flex items-start gap-3 mb-6
+                        {% if data.tier_key == 'high' %}bg-red-50 border border-red-100
+                        {% elif data.tier_key == 'moderate' %}bg-amber-50 border border-amber-100
+                        {% else %}bg-emerald-50 border border-emerald-100{% endif %}">
+                        <span class="material-symbols-outlined text-lg mt-0.5 shrink-0
+                            {% if data.tier_key == 'high' %}text-red-500
+                            {% elif data.tier_key == 'moderate' %}text-amber-500
+                            {% else %}text-emerald-500{% endif %}">
+                            {% if data.tier_key == 'high' %}warning{% elif data.tier_key == 'moderate' %}info{% else
+                            %}check_circle{% endif %}
+                        </span>
+                        <p class="text-sm leading-relaxed
+                            {% if data.tier_key == 'high' %}text-red-800
+                            {% elif data.tier_key == 'moderate' %}text-amber-800
+                            {% else %}text-emerald-800{% endif %}">
+                            {% if data.tier_key == 'high' %}
+                            <strong>Your indicators suggest a high risk of diabetes.</strong> Please consult a
+                            healthcare professional promptly. This is not a diagnosis — a clinician can confirm with
+                            proper blood tests.
+                            {% elif data.tier_key == 'moderate' %}
+                            <strong>Some of your health indicators suggest an increased risk.</strong> This is not a
+                            diagnosis. We encourage you to discuss these results with your healthcare provider at your
+                            earliest convenience.
+                            {% else %}
+                            <strong>Your indicators suggest a low risk of diabetes.</strong> Continue maintaining
+                            healthy habits and schedule routine check-ups with your doctor.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Risk Gauge — Traffic Light (Green-Yellow-Red) driven by real probability -->
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-5">Traffic Light
+                            Risk Scale</p>
+                        <div class="relative px-2">
+                            <div class="gauge-track">
+                                <span class="gauge-label text-risk-low" style="left:14%">Low</span>
+                                <span class="gauge-label text-risk-mod" style="left:50%">Moderate</span>
+                                <span class="gauge-label text-risk-high" style="left:86%">High</span>
+                                <!-- Needle positioned at exact probability percentage -->
+                                <div class="gauge-marker" id="gauge-dot"
+                                    style="left:{{ [data.probability, 98]|min|int }}%"
+                                    title="{{ data.probability }}% risk"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-10 px-2">
+                            <span class="text-risk-low font-semibold">0% — Safe</span>
+                            <span class="text-risk-mod font-semibold">50%</span>
+                            <span class="text-risk-high font-semibold">100% — High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT 2/5: Patient Health Summary -->
+            <div class="lg:col-span-2 card anim anim-d2 p-6 flex flex-col gap-4">
+                <div class="flex items-center gap-2.5 mb-1">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-primary text-base">person</span>
+                    </div>
+                    <h2 class="font-display text-base font-semibold text-slate-800">Your Health Summary</h2>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    {% set inp = data.input %}
+                    {% set all_f = data.all_features %}
+
+                    <!-- Age -->
+                    <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+                        <div class="flex items-center gap-1 mb-1.5">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Age</p>
+                        </div>
+                        <p class="text-xl font-bold text-slate-800">{{ inp.Age }}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Years</p>
+                    </div>
+
+                    <!-- BMI -->
+                    {% set bmi_val = inp.BMI %}
+                    <div
+                        class="rounded-xl p-3.5 border
+                        {% if bmi_val >= 30 %}bg-red-50 border-red-100{% elif bmi_val >= 25 %}bg-amber-50 border-amber-100{% else %}bg-slate-50 border-slate-100{% endif %}">
+                        <div class="flex items-center gap-1 mb-1.5">
+                            <span
+                                class="material-symbols-outlined text-sm {% if bmi_val >= 30 %}text-red-400{% elif bmi_val >= 25 %}text-amber-500{% else %}text-slate-400{% endif %}">monitor_weight</span>
+                            <p
+                                class="text-[9px] font-bold uppercase tracking-widest {% if bmi_val >= 30 %}text-red-400{% elif bmi_val >= 25 %}text-amber-500{% else %}text-slate-400{% endif %}">
+                                BMI</p>
+                        </div>
+                        <p
+                            class="text-xl font-bold {% if bmi_val >= 30 %}text-red-600{% elif bmi_val >= 25 %}text-amber-700{% else %}text-slate-800{% endif %}">
+                            {{ bmi_val }}</p>
+                        <p
+                            class="text-[10px] mt-0.5 {% if bmi_val >= 30 %}text-red-400{% elif bmi_val >= 25 %}text-amber-500{% else %}text-slate-400{% endif %}">
+                            kg/m² · {% if bmi_val >= 30 %}Obese{% elif bmi_val >= 25 %}Overweight{% else %}Normal{%
+                            endif %}
+                        </p>
+                    </div>
+
+                    <!-- Glucose -->
+                    {% set gluc = inp.Glucose %}
+                    <div
+                        class="rounded-xl p-3.5 border
+                        {% if gluc >= 126 %}bg-red-50 border-red-100{% elif gluc >= 100 %}bg-amber-50 border-amber-100{% else %}bg-emerald-50 border-emerald-100{% endif %}">
+                        <div class="flex items-center gap-1 mb-1.5">
+                            <span
+                                class="material-symbols-outlined text-sm {% if gluc >= 126 %}text-red-400{% elif gluc >= 100 %}text-amber-500{% else %}text-emerald-500{% endif %}">water_drop</span>
+                            <p
+                                class="text-[9px] font-bold uppercase tracking-widest {% if gluc >= 126 %}text-red-400{% elif gluc >= 100 %}text-amber-500{% else %}text-emerald-500{% endif %}">
+                                Glucose</p>
+                        </div>
+                        <p
+                            class="text-xl font-bold {% if gluc >= 126 %}text-red-600{% elif gluc >= 100 %}text-amber-700{% else %}text-emerald-700{% endif %}">
+                            {{ gluc }}</p>
+                        <p
+                            class="text-[10px] mt-0.5 {% if gluc >= 126 %}text-red-400{% elif gluc >= 100 %}text-amber-500{% else %}text-emerald-500{% endif %}">
+                            mg/dL · {% if gluc >= 126 %}Diabetic range{% elif gluc >= 100 %}Pre-diabetic{% else
+                            %}Normal{% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Blood Pressure -->
+                    {% set bp = inp.BloodPressure %}
+                    <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+                        <div class="flex items-center gap-1 mb-1.5">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">favorite</span>
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Blood Pressure</p>
+                        </div>
+                        <p class="text-xl font-bold text-slate-800">{{ bp }}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">mmHg · {% if bp >= 90 %}High{% elif bp >= 60
+                            %}Normal{% else %}Low{% endif %}</p>
+                    </div>
+
+                    <!-- Insulin -->
+                    <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+                        <div class="flex items-center gap-1 mb-1.5">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">biotech</span>
+                            <p class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Insulin</p>
+                        </div>
+                        <p class="text-xl font-bold text-slate-800">{{ inp.Insulin }}</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">mu U/mL</p>
+                    </div>
+
+                    <!-- Pedigree / Family History -->
+                    {% set ped = inp.DiabetesPedigreeFunction %}
+                    <div
+                        class="rounded-xl p-3.5 border
+                        {% if ped > 0.8 %}bg-amber-50 border-amber-100{% else %}bg-slate-50 border-slate-100{% endif %}">
+                        <div class="flex items-center gap-1 mb-1.5">
+                            <span
+                                class="material-symbols-outlined text-sm {% if ped > 0.8 %}text-amber-500{% else %}text-slate-400{% endif %}">family_history</span>
+                            <p
+                                class="text-[9px] font-bold uppercase tracking-widest {% if ped > 0.8 %}text-amber-500{% else %}text-slate-400{% endif %}">
+                                Family History</p>
+                        </div>
+                        <p
+                            class="text-base font-bold {% if ped > 0.8 %}text-amber-700{% else %}text-slate-800{% endif %}">
+                            {{ ped }}</p>
+                        <p
+                            class="text-[10px] mt-0.5 {% if ped > 0.8 %}text-amber-500{% else %}text-slate-400{% endif %}">
+                            {% if ped > 0.8 %}Strong risk{% elif ped > 0.4 %}Moderate risk{% else %}Low risk{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-3 border-t border-slate-100 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-slate-300 text-sm">schedule</span>
+                    <p class="text-[10px] text-slate-400" id="report-time">Assessment generated today</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SECTION 2: SHAP Risk Factors ── -->
+        <div class="card anim anim-d3 p-7">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary">psychology</span>
+                </div>
+                <div>
+                    <h2 class="font-display text-xl text-slate-800">Why This Risk Was Identified</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">AI-identified factors that influenced your result (SHAP
+                        analysis)</p>
+                </div>
+            </div>
+
+            <!-- Dynamic SHAP factor cards — top 3 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {% set color_map = ['red', 'amber', 'blue'] %}
+                {% for feat in data.top_features[:3] %}
+                {% set rank = loop.index %}
+                {% set is_risk = feat.shap > 0 %}
+                {% set c = 'red' if (rank == 1 and is_risk) else ('amber' if rank == 2 else 'blue') %}
+                <div class="rounded-xl border border-{{ c }}-100 bg-{{ c }}-50 p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-white border border-{{ c }}-200 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-{{ c }}-500 text-base">
+                                    {% if feat.feature == 'Glucose' %}water_drop
+                                    {% elif feat.feature == 'BMI' %}monitor_weight
+                                    {% elif feat.feature == 'Age' %}calendar_today
+                                    {% elif feat.feature == 'BloodPressure' %}favorite
+                                    {% elif feat.feature == 'Insulin' %}biotech
+                                    {% elif feat.feature == 'DiabetesPedigreeFunction' %}family_history
+                                    {% elif feat.feature == 'Glucose_BMI' %}join_inner
+                                    {% elif feat.feature == 'Age_Pedigree' %}genetics
+                                    {% else %}analytics{% endif %}
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">{{ feat.feature }}</p>
+                                <p class="text-[9px] font-bold uppercase tracking-widest text-{{ c }}-500">
+                                    {% if rank == 1 %}Strongest influence{% elif rank == 2 %}Secondary factor{% else
+                                    %}Contributing factor{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="w-2.5 h-2.5 rounded-full bg-{{ c }}-{{ '500 animate-pulse' if rank == 1 else '400' }}">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] text-slate-500 mb-1.5 font-semibold">
+                            <span>Influence</span>
+                            <span>{{ feat.value_display }}</span>
+                        </div>
+                        <div class="h-1.5 rounded-full bg-{{ c }}-100">
+                            <div class="h-full rounded-full bg-{{ c }}-500 factor-bar-fill"
+                                style="width:{{ feat.shap_pct }}%"></div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        {{ feat.status }} — this feature
+                        {{ 'increased' if feat.shap > 0 else 'reduced' }} your risk score
+                        (SHAP impact: {{ '%.3f'|format(feat.shap|abs) }}).
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Clinical Impact Bar Chart — Risk Drivers (replaces raw SHAP list) -->
+            <div class="mb-6 bg-slate-50 rounded-xl p-5 border border-slate-100">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-primary text-base">stacked_bar_chart</span>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Clinical Risk Drivers</p>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">
+                    Each bar shows how much a factor <strong>contributes to</strong> your risk score.
+                    <span class="text-red-500 font-semibold">● Red = raises risk</span> &nbsp;|&nbsp;
+                    <span class="text-emerald-600 font-semibold">● Green = lowers risk</span>.
+                </p>
+                <div class="space-y-3">
+                    {% for feat in data.top_features %}
+                    {% set is_risk = feat.shap > 0 %}
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-semibold text-slate-700">
+                                {{ feat.feature }}
+                                <span class="font-normal text-slate-400 ml-1">{{ feat.value_display }}</span>
+                            </span>
+                            <span class="text-[10px] font-bold
+                                {% if is_risk %}text-red-500{% else %}text-emerald-600{% endif %}">
+                                {% if is_risk %}▲ Raises Risk{% else %}▼ Lowers Risk{% endif %}
+                                &nbsp;{{ feat.shap_pct }}%
+                            </span>
+                        </div>
+                        <div class="h-3 rounded-full bg-slate-200 overflow-hidden relative">
+                            <div class="h-full rounded-full factor-bar-fill
+                                {% if is_risk %}bg-red-500{% else %}bg-emerald-500{% endif %}"
+                                style="width:{{ feat.shap_pct }}%">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">{{ feat.status }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- SHAP Waterfall Image — Human-Friendly Health Meter with cache-bust -->
+            {% if data.shap_plot_url %}
+            <div class="mb-6 bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary text-base">bar_chart</span>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Your Health Indicators at
+                        a Glance</p>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">Each bar shows where your measurement falls.
+                    <span class="text-emerald-600 font-semibold">Green = Normal</span>,
+                    <span class="text-amber-600 font-semibold">Amber = Elevated</span>,
+                    <span class="text-red-600 font-semibold">Red = High</span>.
+                    The ▲▼ arrows show whether each value raised or lowered your risk score.
+                </p>
+                <img src="{{ url_for('static', filename=data.shap_plot_url) }}?v={{ data.prob_raw }}"
+                    alt="Health indicators chart" class="w-full rounded-lg" />
+            </div>
+            {% endif %}
+
+            <!-- Gemini failed notice -->
+            {% if data.gemini_failed %}
+            <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                <span class="material-symbols-outlined text-amber-500 text-lg mt-0.5 shrink-0">info</span>
+                <p class="text-sm text-amber-800">
+                    <strong>AI recommendations unavailable.</strong>
+                    The Gemini API could not be reached. Your ML prediction and SHAP analysis above are still fully
+                    accurate. Check your API key or internet connection and retry.
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- Gemini AI Risk Summary -->
+            {% if data.risk_summary %}
+            <div class="bg-primary-light border border-blue-100 rounded-xl p-5 mb-4">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">
+                    <span class="material-symbols-outlined text-sm align-middle">smart_toy</span>
+                    AI-Generated Risk Summary (Google Gemini)
+                </p>
+                <p class="text-sm text-slate-700 leading-relaxed">{{ data.risk_summary }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ── SECTION 3: Recommended Next Steps (Gemini-powered) ── -->
+        <div class="card anim anim-d4 overflow-hidden">
+            <div class="bg-gradient-to-r from-primary to-primary-dark px-7 py-5 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">checklist</span>
+                </div>
+                <div>
+                    <h2 class="font-display text-xl text-white">Recommended Next Steps</h2>
+                    <p class="text-xs text-blue-100 mt-0.5">Personalised suggestions powered by AI — based on your
+                        specific risk profile</p>
+                </div>
+            </div>
+            <div class="p-7">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+                    <!-- Follow-up Tests (Gemini) -->
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Recommended Tests
+                        </p>
+                        <div>
+                            {% for test in data.tests %}
+                            <div class="check-row">
+                                <div
+                                    class="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-primary text-sm">check</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">{{ test.test }}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">
+                                        <span class="font-semibold
+                                            {% if 'Immediate' in test.urgency %}text-red-500
+                                            {% elif '2 weeks' in test.urgency %}text-amber-500
+                                            {% else %}text-slate-500{% endif %}">
+                                            {{ test.urgency }}
+                                        </span>
+                                        — {{ test.reason }}
+                                    </p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Lifestyle Advice (Gemini) -->
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Lifestyle Changes
+                        </p>
+                        <div>
+                            {% for item in data.lifestyle %}
+                            <div class="check-row">
+                                <div
+                                    class="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center shrink-0 mt-0.5">
+                                    <span class="material-symbols-outlined text-primary text-sm">
+                                        {{ item.icon if item.icon else 'check_circle' }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">{{ item.category }}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">{{ item.advice }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Follow-up reminder -->
+                <div class="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    <span class="material-symbols-outlined text-amber-500 text-lg mt-0.5 shrink-0">event</span>
+                    <p class="text-sm text-amber-800 leading-relaxed">
+                        <strong>Follow-up reminder:</strong> We recommend reassessing your risk in
+                        <strong>{% if data.tier_key == 'high' %}4–6 weeks{% elif data.tier_key == 'moderate' %}3–6
+                            months{% else %}12 months{% endif %}</strong>
+                        after making lifestyle changes and consulting your physician.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SECTION 4 removed — chat is now a floating modal (see FAB below) ── -->
+
+        <!-- ── SECTION 5: Disclaimer ── -->
+        <div class="anim anim-d6 flex items-start gap-3 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <span class="material-symbols-outlined text-slate-300 text-lg mt-0.5 shrink-0">gavel</span>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                <strong class="text-slate-600">Medical Disclaimer:</strong>
+                This assessment is generated by an AI-based decision support system (XGBoost + SHAP + Google Gemini) and
+                is for informational and educational purposes only. It does not replace professional medical diagnosis,
+                treatment, or consultation. Always seek the advice of your physician or a qualified healthcare provider.
+                Do not delay or disregard professional medical advice based on information provided by this tool.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- ═══════════════ STICKY BOTTOM BAR ═══════════════ -->
+    <div
+        class="no-print fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-lg p-4 z-40">
+        <div class="max-w-6xl mx-auto flex items-center gap-3">
+            <a href="{{ url_for('index') }}"
+                class="flex items-center justify-center gap-2 h-11 px-5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:border-primary hover:text-primary transition-colors bg-white no-underline shrink-0">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                New Assessment
+            </a>
+            <button onclick="window.print()"
+                class="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-primary hover:bg-primary-dark text-white text-sm font-bold transition-colors shadow-md shadow-primary/20">
+                <span class="material-symbols-outlined text-base">download</span>
+                Download Risk Report
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ FLOATING CHAT BUTTON (FAB) ═══════════════ -->
+    <button id="chat-fab" title="Ask about your results" class="no-print"
+        onclick="document.getElementById('chat-modal-overlay').classList.add('open'); document.getElementById('fab-icon').textContent='close';">
+        <span class="material-symbols-outlined text-2xl" id="fab-icon">chat</span>
+        <span class="fab-badge animate-pulse"></span>
+    </button>
+
+    <!-- ═══════════════ CHAT MODAL ═══════════════ -->
+    <div id="chat-modal-overlay" onclick="handleOverlayClick(event)">
+        <div id="chat-modal">
+            <!-- Modal Header -->
+            <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow shadow-primary/30">
+                    <span class="material-symbols-outlined text-white text-lg">smart_toy</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-slate-800 text-sm leading-tight">HealthAI Assistant</p>
+                    <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                        Online · Powered by Gemini
+                    </p>
+                </div>
+                <button id="chat-close-btn"
+                    onclick="document.getElementById('chat-modal-overlay').classList.remove('open'); document.getElementById('fab-icon').textContent='chat';"
+                    class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+
+            <!-- Chat History -->
+            <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <div class="flex items-start gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
+                        <span class="material-symbols-outlined text-white text-sm">smart_toy</span>
+                    </div>
+                    <div class="chat-bot px-4 py-2.5 max-w-xs">
+                        <p class="text-sm text-slate-700 leading-relaxed">
+                            Hi! Your result is <strong>{{ data.probability }}%</strong> &mdash; <strong>{{
+                                data.tier_label }}</strong>.
+                            {% if data.tier_key == 'high' %}
+                            I know this might feel worrying. I'm here to help you understand what this means and what to
+                            do next.
+                            {% elif data.tier_key == 'moderate' %}
+                            Some things are worth keeping an eye on. I can explain your specific values and what they
+                            mean.
+                            {% else %}
+                            That's a reassuring result! I can help you understand your numbers and how to stay healthy.
+                            {% endif %}
+                            Try one of the questions below or type your own.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Chips -->
+            <div class="px-4 pb-2 pt-1 flex flex-wrap gap-1.5 border-t border-slate-100 bg-slate-50/60 shrink-0">
+                {% if data.tier_key == 'high' %}
+                <button onclick="askQuestion('Why is my risk so high?')" class="chip-btn">Why so high?</button>
+                <button onclick="askQuestion('What should I do first?')" class="chip-btn">What to do first?</button>
+                <button onclick="askQuestion('What does my glucose mean?')" class="chip-btn">My glucose?</button>
+                <button onclick="askQuestion('Will I definitely get diabetes?')" class="chip-btn">Will I get
+                    diabetes?</button>
+                {% elif data.tier_key == 'moderate' %}
+                <button onclick="askQuestion('What does moderate risk mean?')" class="chip-btn">Moderate risk?</button>
+                <button onclick="askQuestion('How can I lower my risk?')" class="chip-btn">Lower my risk?</button>
+                <button onclick="askQuestion('What does my BMI mean?')" class="chip-btn">My BMI?</button>
+                <button onclick="askQuestion('Which test should I get first?')" class="chip-btn">First test?</button>
+                {% else %}
+                <button onclick="askQuestion('Why is my risk low?')" class="chip-btn">Why low risk?</button>
+                <button onclick="askQuestion('How do I stay at low risk?')" class="chip-btn">Stay low risk?</button>
+                <button onclick="askQuestion('Is this result accurate?')" class="chip-btn">Is this accurate?</button>
+                <button onclick="askQuestion('Do I still need to see a doctor?')" class="chip-btn">See a
+                    doctor?</button>
+                {% endif %}
+            </div>
+
+            <!-- Input Row -->
+            <div class="flex gap-2 items-center px-4 py-3 border-t border-slate-100 bg-white shrink-0">
+                <input id="chat-input" type="text" placeholder="e.g. What does {{ data.input.Glucose }} mg/dL mean?"
+                    class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
+                    onkeydown="if(event.key==='Enter') sendChat()" />
+                <button id="chat-send-btn"
+                    class="w-10 h-10 rounded-xl bg-primary hover:bg-primary-dark text-white flex items-center justify-center transition-colors shrink-0 shadow shadow-primary/20">
+                    <span class="material-symbols-outlined text-base">send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ SCRIPTS ═══════════════ -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // ── Timestamp ──
+            const now = new Date();
+            const reportTimeEl = document.getElementById('report-time');
+            if (reportTimeEl) {
+                reportTimeEl.textContent =
+                    'Generated on ' +
+                    now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) +
+                    ' at ' +
+                    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            // ── Patient context — reads from hidden HTML elements (formatter-safe) ──
+            const _get = id => document.getElementById(id).textContent.trim();
+            const ctx = {
+                prob:       parseFloat(_get('jinja-prob'))    || 0,
+                tier:       _get('jinja-tier')                || 'low',
+                tierLabel:  _get('jinja-tier-label')          || 'Low Risk',
+                glucose:    parseFloat(_get('jinja-glucose'))  || 0,
+                bmi:        parseFloat(_get('jinja-bmi'))      || 0,
+                bp:         parseFloat(_get('jinja-bp'))       || 0,
+                age:        parseFloat(_get('jinja-age'))      || 0,
+                insulin:    parseFloat(_get('jinja-insulin'))  || 0,
+                pedigree:   parseFloat(_get('jinja-pedigree')) || 0,
+                topFeature: _get('jinja-top-feature')         || 'Glucose',
+                topStatus:  _get('jinja-top-status')          || 'Unknown'
+            };
+
+        // ── Modal open / close ──
+        function openChat() {
+            const overlay = document.getElementById('chat-modal-overlay');
+            const icon = document.getElementById('fab-icon');
+            if (overlay) overlay.classList.add('open');
+            if (icon) icon.textContent = 'close';
+            setTimeout(() => {
+                const inp = document.getElementById('chat-input');
+                if (inp) inp.focus();
+            }, 300);
+        }
+
+        function closeChat() {
+            const overlay = document.getElementById('chat-modal-overlay');
+            const icon = document.getElementById('fab-icon');
+            if (overlay) overlay.classList.remove('open');
+            if (icon) icon.textContent = 'chat';
+        }
+
+        function handleOverlayClick(event) {
+            const overlay = document.getElementById('chat-modal-overlay');
+            if (event.target === overlay) closeChat();
+        }
+        window.handleOverlayClick = handleOverlayClick;
+
+        // ── Wire up FAB, close button, overlay click, Escape key ──
+        const fab = document.getElementById('chat-fab');
+        if (fab) fab.addEventListener('click', openChat);
+
+        const closeBtn = document.getElementById('chat-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', closeChat);
+
+        const overlay = document.getElementById('chat-modal-overlay');
+        if (overlay) overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) closeChat();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeChat();
+        });
+
+        // ── Wire up send button and Enter key ──
+        const sendBtn = document.getElementById('chat-send-btn');
+        const chatInp = document.getElementById('chat-input');
+        if (sendBtn) sendBtn.addEventListener('click', sendChat);
+        if (chatInp) chatInp.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') sendChat();
+        });
+
+        // ── Chip buttons use inline onclick="askQuestion(...)" — no addEventListener needed ──
+
+        // ── Append message helper ──
+        function appendMsg(html, isUser) {
+            const history = document.getElementById('chat-history');
+            if (!history) return;
+            const wrap = document.createElement('div');
+            wrap.className = 'flex items-start gap-2.5' + (isUser ? ' justify-end' : '');
+            if (isUser) {
+                wrap.innerHTML = `<div class="chat-user px-4 py-2.5 max-w-xs"><p class="text-sm leading-relaxed">${html}</p></div><div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center shrink-0 mt-0.5"><span class="material-symbols-outlined text-slate-500 text-sm">person</span></div>`;
+            } else {
+                wrap.innerHTML = `<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5"><span class="material-symbols-outlined text-white text-sm">smart_toy</span></div><div class="chat-bot px-4 py-2.5 max-w-xs"><p class="text-sm text-slate-700 leading-relaxed">${html}</p></div>`;
+            }
+            history.appendChild(wrap);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        // ── Typing indicator ──
+        function showTyping() {
+            const history = document.getElementById('chat-history');
+            if (!history) return;
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex items-start gap-2.5';
+            div.innerHTML = `<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5"><span class="material-symbols-outlined text-white text-sm">smart_toy</span></div><div class="chat-bot px-4 py-2.5"><p class="text-sm text-slate-400 italic">Typing...</p></div>`;
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function hideTyping() {
+            const el = document.getElementById('typing-indicator');
+            if (el) el.remove();
+        }
+
+        // ── Chat fetch ──
+        async function askQuestion(q) {
+            if (!q) return;
+            openChat();
+            appendMsg(q, true);
+            showTyping();
+            try {
+                const resp = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: q, context: ctx })
+                });
+                const result = await resp.json();
+                hideTyping();
+                appendMsg(result.reply || 'Sorry, I could not process that. Please try again.', false);
+            } catch (err) {
+                hideTyping();
+                appendMsg('Connection error. Please check your internet and try again.', false);
+                console.error('Chat error:', err);
+            }
+        }
+
+        async function sendChat() {
+            const inp = document.getElementById('chat-input');
+            if (!inp) return;
+            const q = inp.value.trim();
+            if (!q) return;
+            inp.value = '';
+            inp.disabled = true;
+            await askQuestion(q);
+            inp.disabled = false;
+            inp.focus();
+        }
+
+        // ── Expose askQuestion globally for chip button onclicks in Jinja2 HTML ──
+        window.askQuestion = askQuestion;
+
+    }); // end DOMContentLoaded
+    </script>
+</body>
+
+</html>
