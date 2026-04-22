@@ -146,23 +146,57 @@ cd HealthAI-DSS
 pip install -r requirements.txt
 ```
 
-### 3. Set your Gemini API key
+### 3. Train the Model (Run Once)
+
+Run this file first. It trains XGBoost with SMOTETomek,
+finds the optimal threshold, and saves the model files
+to the `/model` folder.
+
+```bash
+python stage2_smote.py
+```
+
+> ✅ This creates: `model/xgb_model.pkl`,
+>                  `model/imputer.pkl`,
+>                  `model/scaler.pkl`
+
+### 4. Generate SHAP Analysis (Run Once)
+
+Run this file to generate the global SHAP feature
+importance plots and validate explainability.
+
+```bash
+python stage3_shap.py
+```
+
+> ✅ This creates SHAP plots inside `static/shap/`
+
+### 5. (Optional) Generate PDF Report
+
+Run this only if you want to test the standalone
+PDF report generation outside the web app.
+
+```bash
+python stage4_llm_recommendations.py
+```
+### 6. Set your Gemini API key
 ```bash
 # Windows
 set GEMINI_API_KEY=your_api_key_here
 
 # Mac / Linux
 export GEMINI_API_KEY=your_api_key_here
-```
 
-### 4. Run the application
+```
+### 7. Run the Web App
+
+Now that the model files exist, run the Flask app.
+
 ```bash
 python app.py
 ```
-
-### 5. Open in browser
+### 8. Open in browser
 http://localhost:5000
-
 
 ---
 
