@@ -24,8 +24,6 @@ from xgboost import XGBClassifier
 import google.generativeai as genai
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-if not GEMINI_API_KEY:
-    GEMINI_API_KEY = "AIzaSyB0uEqF9AGBaqp-IhR2T3yagGxSyw7TOSs"
 
 DATA_PATH     = os.path.join(os.path.dirname(os.path.abspath(__file__)), "diabetes.csv")
 MODEL_DIR     = "model"
